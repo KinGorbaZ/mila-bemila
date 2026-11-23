@@ -1,7 +1,7 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=8';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=8';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=9';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=9';
 
-const VERSION = 8;
+const VERSION = 9;
 
 const $ = sel => document.querySelector(sel);
 // Visible text is drawn by CSS from data-t instead of living in the page as text,
@@ -537,12 +537,14 @@ document.addEventListener('pointermove', e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
     drag.ghost = drag.src.cloneNode(true);
     drag.ghost.classList.add('ghost');
+    // on touch the finger holds the tile by its lower part, so the tile shows above the finger
+    drag.ghost.classList.toggle('held-low', e.pointerType !== 'mouse');
     drag.ghost.classList.remove('selected');
     document.body.append(drag.ghost);
     drag.src.classList.add('lifted');
   }
   drag.ghost.style.left = e.clientX + 'px';
-  drag.ghost.style.top = e.clientY - lift(e) + 'px';
+  drag.ghost.style.top = e.clientY + 'px';
   markTarget(cellUnder(e));
 });
 const endDrag = e => {
