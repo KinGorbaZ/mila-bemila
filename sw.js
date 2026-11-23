@@ -1,5 +1,5 @@
 // Offline support: fresh from the network when possible, cached copy otherwise.
-const CACHE = 'mbm-v5';
+const CACHE = 'mbm-v6';
 const SHELL = ['./', 'index.html', 'style.css', 'js/app.js', 'js/engine.js', 'js/content.js',
   'data/he.dawg', 'data/he.json', 'data/fr.dawg', 'data/fr.json',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];

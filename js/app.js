@@ -1,13 +1,16 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=5';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=5';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=6';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=6';
 
-const VERSION = 5;
+const VERSION = 6;
 
 const $ = sel => document.querySelector(sel);
+// Visible text is drawn by CSS from data-t instead of living in the page as text,
+// so a browser's automatic page translation has nothing to rewrite.
+const txt = (e, s) => { e.dataset.t = s; return e; };
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
-  if (text != null) e.textContent = text;
+  if (text != null) txt(e, text);
   return e;
 };
 const store = {
@@ -269,16 +272,16 @@ function renderGame() {
     board.append(c);
   }
 
-  $('#you-name').textContent = me();
-  $('#opp-name').textContent = oppName();
-  $('#you-score').textContent = g.scores[0];
-  $('#opp-score').textContent = g.scores[1];
+  txt($('#you-name'), me());
+  txt($('#opp-name'), oppName());
+  txt($('#you-score'), g.scores[0]);
+  txt($('#opp-score'), g.scores[1]);
   $('#you').classList.toggle('turn', g.turn === 0 && !g.over);
   $('#opp').classList.toggle('turn', g.turn === 1 && !g.over);
-  $('#bag').textContent = T.bag(g.bag.length);
-  $('#stage-no').textContent = g.stage + 1;
+  txt($('#bag'), T.bag(g.bag.length));
+  txt($('#stage-no'), g.stage + 1);
   $('#back').setAttribute('aria-label', T.back);
-  $('#msg').textContent = g.msg;
+  txt($('#msg'), g.msg);
 
   const rack = $('#rack');
   rack.replaceChildren();
@@ -292,7 +295,7 @@ function renderGame() {
 
   const res = pending.length ? evaluate(dict, boardOf(g), pending) : null;
   const mine = g.turn === 0 && !g.over && !busy;
-  const set = (id, label, on) => { const b = $(id); b.textContent = label; b.disabled = !on; };
+  const set = (id, label, on) => { const b = $(id); txt(b, label); b.disabled = !on; };
   set('#play', res && res.ok ? T.playScore(res.score) : T.play, mine && pending.length > 0);
   $('#play').classList.toggle('ready', !!(res && res.ok));
   set('#recall', T.recall, mine && pending.length > 0);
@@ -300,9 +303,10 @@ function renderGame() {
   set('#swap', T.swap, mine);
   set('#pass', T.pass, mine);
   set('#hint', T.hint(g.hints), mine);
-  $('#words').textContent = T.wordsBtn;
+  txt($('#words'), T.wordsBtn);
   $('#legend').replaceChildren(...[1, 2, 3, 4].map(k => {
-    const s = el('span', 'key b' + k, T.bonus[k]);
+    const s = el('span', 'key b' + k);
+    s.append(el('span', 'sw'), el('span', '', T.bonus[k]));
     return s;
   }));
 
@@ -352,9 +356,9 @@ function afterPlayerTurn() {
 
 function opponentTurn() {
   busy = true;
-  $('#msg').textContent = T.thinking(oppName());
+  txt($('#msg'), T.thinking(oppName()));
   renderGame();
-  $('#msg').textContent = T.thinking(oppName());
+  txt($('#msg'), T.thinking(oppName()));
   setTimeout(() => {
     const moves = generateMoves(dict, boardOf(game), game.racks[1]);
     const m = chooseMove(moves, stage(game.stage).skill);
@@ -488,7 +492,7 @@ function showResult() {
 let toastTimer;
 function toast(text, sticky) {
   const t = $('#toast');
-  t.textContent = text;
+  txt(t, text);
   t.classList.add('show');
   clearTimeout(toastTimer);
   if (!sticky) toastTimer = setTimeout(hideToast, 2600);
