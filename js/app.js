@@ -558,6 +558,12 @@ $('#words').onclick = wordsDialog;
 $('#back').onclick = () => { toast(T.quitAsk); renderHome(); };
 
 if (store.get('mbm.welcomed', false)) renderHome(); else renderWelcome();
-if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
-  navigator.serviceWorker?.register('sw.js');
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  // when a new version takes over, reload once so the page is never stuck on old files
+  const had = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (had && !reloaded) { reloaded = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});
 }
