@@ -1,14 +1,14 @@
 // Stages, opponents and interface text in both languages.
 
-export const STAGES = 24;
-export const PER_TIER = 6;
+export const STAGES = 100;
+export const PER_TIER = 10;
 
 export const stage = i => ({
   index: i,
   tier: Math.floor(i / PER_TIER),
   skill: 0.22 + 0.78 * Math.pow(i / (STAGES - 1), 0.9),
-  bag: i < 6 ? 60 : i < 12 ? 80 : 100,
-  hints: i < 6 ? 5 : i < 12 ? 4 : 3,
+  bag: i < 20 ? 60 : i < 40 ? 80 : 100,
+  hints: i < 20 ? 5 : i < 40 ? 4 : 3,
 });
 
 export const starsFor = margin => margin <= 0 ? 0 : margin >= 90 ? 3 : margin >= 40 ? 2 : 1;
@@ -18,14 +18,18 @@ const he = {
   title: 'מילה במילה',
   tagline: 'משחק מילים מול יריבים שהולכים ומתחזקים',
   switchTo: 'Français',
-  tiers: [
-    ['השכונה', 'משחק קצר מול יריבים נינוחים'],
-    ['בית הקפה', 'משחק בינוני, היריבים כבר מכירים מילים'],
-    ['הספרייה', 'משחק מלא מול קוראים ותיקים'],
-    ['האקדמיה', 'משחק מלא מול מי שלא מפספס מילה'],
-  ],
-  opponents: ['נועה', 'יוסי', 'תמר', 'דני', 'מיכל', 'אבי', 'רונית', 'שאול', 'יעל', 'גדי', 'אורנה', 'עמוס',
-    'דבורה', 'אליעזר', 'חנה', 'נתן', 'רחל', 'צבי', 'פנינה', 'ברוך', 'עדה', 'שמואל', 'המילונאית', 'נשיא האקדמיה'],
+  tiers: ['השכונה', 'השוק', 'בית הקפה', 'הטיילת', 'חנות הספרים', 'מערכת העיתון', 'הספרייה', 'האוניברסיטה', 'האקדמיה', 'היכל המילים'],
+  tierNote: bag => bag === 60 ? 'משחקים קצרים' : bag === 80 ? 'משחקים בינוניים' : 'משחקים מלאים',
+  opponents: ['נועה', 'יוסי', 'תמר', 'דני', 'מיכל', 'אבי', 'רונית', 'שאול', 'יעל', 'גדי',
+    'אורנה', 'עמוס', 'דבורה', 'אליעזר', 'חנה', 'נתן', 'רחל', 'צבי', 'פנינה', 'ברוך',
+    'עדה', 'שמואל', 'מרים', 'יצחק', 'שושנה', 'אהרון', 'ציפי', 'מנחם', 'אסתר', 'יהודה',
+    'נעמי', 'אפרים', 'בתיה', 'חיים', 'זהבה', 'משה', 'עליזה', 'יעקב', 'שרה', 'ראובן',
+    'גאולה', 'שלמה', 'טובה', 'אליהו', 'יהודית', 'מרדכי', 'לאה', 'בנימין', 'רבקה', 'דוד'],
+  welcomeAsk: 'איך קוראים לך?', namePlaceholder: 'השם שלך', start: 'מתחילים',
+  hello: n => `שלום ${n}`, changeName: 'שינוי שם',
+  install: 'התקנה כאפליקציה',
+  installAndroid: 'להתקנה בטלפון: תפריט ⋮ של הדפדפן, ואז "הוספה למסך הבית"',
+  installIos: 'להתקנה באייפון: כפתור השיתוף, ואז "הוספה למסך הבית"',
   resume: n => `להמשיך את המשחק בשלב ${n}`,
   locked: 'ננעל עד ניצחון בשלב הקודם',
   you: 'את',
@@ -57,7 +61,7 @@ const he = {
   passAsk: 'לדלג על התור?', passDo: 'דילוג',
   quitAsk: 'המשחק נשמר. אפשר לחזור אליו מרשימת השלבים.',
   win: 'ניצחת!', lose: 'הפעם לא', tie: 'תיקו',
-  finalScore: (a, name, b) => `את ${a}, ${name} ${b}`,
+  finalScore: (me, a, name, b) => `${me} ${a}, ${name} ${b}`,
   next: 'לשלב הבא', again: 'לשחק שוב', toStages: 'לרשימת השלבים',
   close: 'סגירה', wordsBtn: 'מילים', wordsTitle: 'המילים במשחק', lookup: 'פירוש המילה',
   loading: 'טוען את המילון…',
@@ -72,14 +76,18 @@ const fr = {
   title: 'MOT A MOT',
   tagline: 'Un jeu de lettres contre des adversaires de plus en plus forts',
   switchTo: 'עברית',
-  tiers: [
-    ['Le quartier', 'Partie courte, adversaires détendus'],
-    ['Le café', 'Partie moyenne, ils connaissent déjà leurs mots'],
-    ['La bibliothèque', 'Partie complète contre de grands lecteurs'],
-    ['L’Académie', 'Partie complète, aucun mot ne leur échappe'],
-  ],
-  opponents: ['Léa', 'Hugo', 'Camille', 'Jules', 'Manon', 'Louis', 'Chloé', 'Antoine', 'Inès', 'Théo', 'Margaux', 'Émile',
-    'Colette', 'Marcel', 'Simone', 'Victor', 'Marguerite', 'Gustave', 'Françoise', 'Honoré', 'George', 'Alexandre', 'La Lexicographe', 'L’Académicien'],
+  tiers: ['Le quartier', 'Le marché', 'Le café', 'La promenade', 'La librairie', 'La rédaction', 'La bibliothèque', 'L’université', 'L’Académie', 'Le panthéon des mots'],
+  tierNote: bag => bag === 60 ? 'Parties courtes' : bag === 80 ? 'Parties moyennes' : 'Parties complètes',
+  opponents: ['Léa', 'Hugo', 'Camille', 'Jules', 'Manon', 'Louis', 'Chloé', 'Antoine', 'Inès', 'Théo',
+    'Margaux', 'Émile', 'Colette', 'Marcel', 'Simone', 'Victor', 'Marguerite', 'Gustave', 'Françoise', 'Honoré',
+    'Jeanne', 'Alexandre', 'Louise', 'Henri', 'Suzanne', 'Paul', 'Madeleine', 'Georges', 'Odette', 'René',
+    'Juliette', 'Albert', 'Hélène', 'Lucien', 'Yvonne', 'André', 'Denise', 'Étienne', 'Thérèse', 'Raymond',
+    'Agathe', 'Octave', 'Clémence', 'Anatole', 'Solange', 'Fernand', 'Ginette', 'Léon', 'Mathilde', 'Maurice'],
+  welcomeAsk: 'Comment vous appelez-vous ?', namePlaceholder: 'Votre prénom', start: 'Commencer',
+  hello: n => `Bonjour ${n}`, changeName: 'Changer de nom',
+  install: 'Installer l’application',
+  installAndroid: 'Pour installer : menu ⋮ du navigateur, puis « Ajouter à l’écran d’accueil »',
+  installIos: 'Pour installer sur iPhone : bouton Partager, puis « Sur l’écran d’accueil »',
   resume: n => `Reprendre la partie du niveau ${n}`,
   locked: 'Se débloque en gagnant le niveau précédent',
   you: 'Vous',
@@ -111,7 +119,7 @@ const fr = {
   passAsk: 'Passer votre tour ?', passDo: 'Passer',
   quitAsk: 'La partie est enregistrée. Vous la retrouverez dans la liste des niveaux.',
   win: 'Gagné !', lose: 'Pas cette fois', tie: 'Égalité',
-  finalScore: (a, name, b) => `Vous ${a}, ${name} ${b}`,
+  finalScore: (me, a, name, b) => `${me} ${a}, ${name} ${b}`,
   next: 'Niveau suivant', again: 'Rejouer', toStages: 'Liste des niveaux',
   close: 'Fermer', wordsBtn: 'Mots', wordsTitle: 'Les mots de la partie', lookup: 'Définition',
   loading: 'Chargement du dictionnaire…',

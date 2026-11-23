@@ -22,6 +22,39 @@ let game = null;          // saved state of the current game
 let pending = [];         // tiles laid this turn: { idx (in rack), pos, letter, blank }
 let selected = -1;        // rack index picked by tap
 let busy = false;
+let playerName = store.get('mbm.name', '');
+const me = () => playerName || T.you;
+const opponent = i => T.opponents[i % T.opponents.length];
+
+// ---------- install as an app ----------
+let installEvent = null;
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function fillInstall(box) {
+  box.replaceChildren();
+  if (standalone()) return;
+  if (installEvent) {
+    const b = el('button', '', T.install);
+    b.onclick = async () => {
+      const ev = installEvent;
+      ev.prompt();
+      await ev.userChoice;
+      installEvent = null;
+      fillInstall(box);
+    };
+    box.append(b);
+  } else {
+    box.append(el('p', '', /iphone|ipad|ipod/i.test(navigator.userAgent) ? T.installIos : T.installAndroid));
+  }
+}
+function installRow() {
+  const box = el('div', 'install');
+  box.id = 'install';
+  fillInstall(box);
+  return box;
+}
+const refreshInstall = () => { const b = $('#install'); if (b) fillInstall(b); };
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvent = e; refreshInstall(); });
+window.addEventListener('appinstalled', () => { installEvent = null; refreshInstall(); });
 
 const progress = () => store.get('mbm.stars.' + lang, []);
 const savedGame = () => store.get('mbm.game.' + lang, null);
@@ -45,25 +78,62 @@ function tile(letter, value, cls = '') {
   return t;
 }
 
-function renderHome() {
+function openHome(cls) {
   document.documentElement.lang = lang;
   document.documentElement.dir = T.dir;
-  document.title = TEXT.he.title + ' | Mot à Mot';
   $('#game').hidden = true;
   const home = $('#home');
   home.hidden = false;
+  home.className = cls;
   home.replaceChildren();
-
   const head = el('header', 'hero');
   const word = el('h1', 'hero-word');
   word.setAttribute('aria-label', T.title);
   for (const ch of T.title) word.append(ch === ' ' ? el('span', 'gap') : tile(ch, ''));
   head.append(word, el('p', 'tagline', T.tagline));
+  home.append(head);
+  return [home, head];
+}
+
+function langSwitch(then) {
   const sw = el('button', 'lang-switch', T.switchTo);
   sw.lang = lang === 'he' ? 'fr' : 'he';
-  sw.onclick = () => { lang = lang === 'he' ? 'fr' : 'he'; T = TEXT[lang]; store.set('mbm.lang', lang); renderHome(); };
-  head.append(sw);
-  home.append(head);
+  sw.onclick = () => { lang = lang === 'he' ? 'fr' : 'he'; T = TEXT[lang]; store.set('mbm.lang', lang); then(); };
+  return sw;
+}
+
+function renderWelcome() {
+  const [home, head] = openHome('welcome');
+  head.append(langSwitch(renderWelcome));
+  const form = el('form', 'name-form');
+  const label = el('label', '', T.welcomeAsk);
+  label.htmlFor = 'name';
+  const input = el('input');
+  input.id = 'name'; input.type = 'text'; input.maxLength = 14; input.autocomplete = 'given-name';
+  input.placeholder = T.namePlaceholder; input.value = playerName;
+  const go = el('button', 'start', T.start);
+  go.type = 'submit';
+  form.onsubmit = e => {
+    e.preventDefault();
+    playerName = input.value.trim();
+    store.set('mbm.name', playerName);
+    store.set('mbm.welcomed', true);
+    renderHome();
+  };
+  form.append(label, input, go);
+  home.append(form, installRow());
+  window.scrollTo(0, 0);
+}
+
+function renderHome() {
+  const [home, head] = openHome('');
+  head.append(langSwitch(renderHome));
+  const hello = el('div', 'hello');
+  hello.append(el('span', '', T.hello(me())));
+  const change = el('button', '', T.changeName);
+  change.onclick = renderWelcome;
+  hello.append(change);
+  home.append(hello, installRow());
 
   const stars = progress();
   const saved = savedGame();
@@ -75,12 +145,12 @@ function renderHome() {
 
   for (let t = 0; t < STAGES / PER_TIER; t++) {
     const sec = el('section', 'tier tier-' + t);
-    sec.append(el('h2', '', T.tiers[t][0]), el('p', 'tier-note', T.tiers[t][1]));
+    sec.append(el('h2', '', T.tiers[t]), el('p', 'tier-note', T.tierNote(stage(t * PER_TIER).bag)));
     const grid = el('div', 'stages');
     for (let i = t * PER_TIER; i < (t + 1) * PER_TIER; i++) {
       const open = i === 0 || stars[i - 1] > 0;
-      const b = el('button', 'stage' + (open ? '' : ' locked') + (stars[i] ? ' won' : ''));
-      b.append(el('span', 'num', i + 1), el('span', 'who', T.opponents[i]));
+      const b = el('button', 'stage' + (open ? '' : ' locked') + (stars[i] ? ' won' : '') + (open && !stars[i] ? ' current' : ''));
+      b.append(el('span', 'num', i + 1), el('span', 'who', opponent(i)));
       const st = el('span', 'stars');
       st.setAttribute('aria-label', `${stars[i] || 0}/3`);
       for (let s = 0; s < 3; s++) st.append(el('span', s < (stars[i] || 0) ? 'on' : '', '★'));
@@ -93,6 +163,8 @@ function renderHome() {
     home.append(sec);
   }
   home.append(el('p', 'credits', T.credits));
+  const cur = home.querySelector('.stage.current');
+  if (cur && stars.some(Boolean)) cur.scrollIntoView({ block: 'center' }); else window.scrollTo(0, 0);
 }
 
 // ---------- game state ----------
@@ -127,7 +199,7 @@ async function startStage(i, resume) {
   if (game.turn === 1 && !game.over) opponentTurn();
 }
 
-const oppName = () => T.opponents[game.stage];
+const oppName = () => opponent(game.stage);
 const letterOf = code => dict.alphabet[code - 1];
 
 function commit(who, placements, res) {
@@ -194,7 +266,7 @@ function renderGame() {
     board.append(c);
   }
 
-  $('#you-name').textContent = T.you;
+  $('#you-name').textContent = me();
   $('#opp-name').textContent = oppName();
   $('#you-score').textContent = g.scores[0];
   $('#opp-score').textContent = g.scores[1];
@@ -381,7 +453,7 @@ function wordsDialog() {
   const list = el('ul', 'wordlog');
   for (const entry of game.log) {
     const li = el('li', entry.who ? 'theirs' : 'mine');
-    li.append(el('span', 'who', entry.who ? oppName() : T.you));
+    li.append(el('span', 'who', entry.who ? oppName() : me()));
     const ws = el('span', 'ws');
     for (const w of entry.words) {
       const a = el('a', '', w);
@@ -401,7 +473,7 @@ function showResult() {
   const body = el('div', 'result');
   const st = el('div', 'stars big');
   for (let s = 0; s < 3; s++) st.append(el('span', s < g.stars ? 'on' : '', '★'));
-  body.append(st, el('p', '', T.finalScore(g.scores[0], oppName(), g.scores[1])));
+  body.append(st, el('p', '', T.finalScore(me(), g.scores[0], oppName(), g.scores[1])));
   const buttons = [[T.toStages, () => { store.del('mbm.game.' + lang); renderHome(); }]];
   buttons.push([T.again, () => startStage(g.stage, false)]);
   if (diff > 0 && g.stage < STAGES - 1) buttons.push([T.next, () => startStage(g.stage + 1, false), 'primary']);
@@ -485,7 +557,7 @@ $('#hint').onclick = hint;
 $('#words').onclick = wordsDialog;
 $('#back').onclick = () => { toast(T.quitAsk); renderHome(); };
 
-renderHome();
+if (store.get('mbm.welcomed', false)) renderHome(); else renderWelcome();
 if ('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') {
   navigator.serviceWorker?.register('sw.js');
 }
