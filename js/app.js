@@ -1,7 +1,7 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=4';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=4';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=5';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=5';
 
-const VERSION = 4;
+const VERSION = 5;
 
 const $ = sel => document.querySelector(sel);
 const el = (tag, cls, text) => {
@@ -120,6 +120,7 @@ function renderWelcome() {
     playerName = input.value.trim();
     store.set('mbm.name', playerName);
     store.set('mbm.welcomed', true);
+    store.set('mbm.lang', lang);
     renderHome();
   };
   form.append(label, input, go);
