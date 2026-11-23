@@ -1,7 +1,7 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=7';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=7';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=8';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=8';
 
-const VERSION = 7;
+const VERSION = 8;
 
 const $ = sel => document.querySelector(sel);
 // Visible text is drawn by CSS from data-t instead of living in the page as text,
@@ -515,9 +515,11 @@ function hideToast() { $('#toast').classList.remove('show'); }
 
 // ---------- pointer input: tap or drag ----------
 let drag = null;
-const LIFT = 52; // px the dragged tile floats above the finger, so the finger does not hide it
+// A fingertip touches the screen a little below the spot the person is aiming at, so on touch
+// the aim point is one board cell above the reported contact point. A mouse aims exactly.
+const lift = e => e.pointerType === 'mouse' ? 0 : $('#board').clientWidth / 15;
 const cellUnder = e => {
-  const under = document.elementFromPoint(e.clientX, e.clientY - LIFT);
+  const under = document.elementFromPoint(e.clientX, e.clientY - lift(e));
   return under && under.closest('.cell');
 };
 const markTarget = cell => {
@@ -540,7 +542,7 @@ document.addEventListener('pointermove', e => {
     drag.src.classList.add('lifted');
   }
   drag.ghost.style.left = e.clientX + 'px';
-  drag.ghost.style.top = e.clientY - LIFT + 'px';
+  drag.ghost.style.top = e.clientY - lift(e) + 'px';
   markTarget(cellUnder(e));
 });
 const endDrag = e => {
