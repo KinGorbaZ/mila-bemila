@@ -67,8 +67,8 @@ const he = {
   loading: 'טוען את המילון…',
   bonus: ['', 'אות ×2', 'אות ×3', 'מילה ×2', 'מילה ×3'],
   bonusShort: ['', 'א2', 'א3', 'מ2', 'מ3'],
-  credits: 'מילון עברי: פרויקט Hspell (רישיון AGPL). מילון צרפתי: an-array-of-french-words (MIT).',
-  lookupUrl: w => `https://he.wiktionary.org/w/index.php?search=${encodeURIComponent(w)}`,
+  credits: 'מילון עברי: פרויקט Hspell (רישיון AGPL). מילון צרפתי: an-array-of-french-words (MIT). שכיחות מילים: FrequencyWords (CC-BY-SA 4.0).',
+  lookupUrl: w => `https://www.google.com/search?q=${encodeURIComponent('פירוש המילה ' + w)}`,
 };
 
 const fr = {
@@ -125,7 +125,7 @@ const fr = {
   loading: 'Chargement du dictionnaire…',
   bonus: ['', 'Lettre ×2', 'Lettre ×3', 'Mot ×2', 'Mot ×3'],
   bonusShort: ['', 'L2', 'L3', 'M2', 'M3'],
-  credits: 'Dictionnaire hébreu : projet Hspell (licence AGPL). Dictionnaire français : an-array-of-french-words (MIT).',
+  credits: 'Dictionnaire hébreu : projet Hspell (licence AGPL). Dictionnaire français : an-array-of-french-words (MIT). Fréquence des mots : FrequencyWords (CC-BY-SA 4.0).',
   lookupUrl: w => `https://fr.wiktionary.org/w/index.php?search=${encodeURIComponent(w.toLowerCase())}`,
 };
 

@@ -1,7 +1,7 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=6';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=6';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=7';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=7';
 
-const VERSION = 6;
+const VERSION = 7;
 
 const $ = sel => document.querySelector(sel);
 // Visible text is drawn by CSS from data-t instead of living in the page as text,
@@ -22,6 +22,18 @@ const store = {
 let lang = store.get('mbm.lang', (navigator.language || '').startsWith('fr') ? 'fr' : 'he');
 let T = TEXT[lang];
 const dicts = {};
+const commons = {};      // everyday words only: what the opponent and the hints play
+
+// The full dictionary accepts rare inflections; the computer should not play them.
+// Keep moves made of everyday words, relaxing only if nothing else is possible.
+function everydayMoves(moves) {
+  const c = commons[lang];
+  const known = w => c.has(c.encode(w));
+  const strict = moves.filter(m => m.words.every(known));
+  if (strict.length) return strict;
+  const loose = moves.filter(m => m.words.every(w => w.length < 3 || known(w)));
+  return loose.length ? loose : moves;
+}
 let dict = null;
 let game = null;          // saved state of the current game
 let pending = [];         // tiles laid this turn: { idx (in rack), pos, letter, blank }
@@ -66,11 +78,13 @@ const savedGame = () => store.get('mbm.game.' + lang, null);
 
 async function loadDict(id) {
   if (!dicts[id]) {
-    const [buf, meta] = await Promise.all([
+    const [buf, meta, everyday] = await Promise.all([
       fetch(`data/${id}.dawg?v=${VERSION}`).then(r => r.arrayBuffer()),
       fetch(`data/${id}.json?v=${VERSION}`).then(r => r.json()),
+      fetch(`data/${id}.common.dawg?v=${VERSION}`).then(r => r.arrayBuffer()),
     ]);
     dicts[id] = new Dict(buf, meta);
+    commons[id] = new Dict(everyday, meta);
   }
   return dicts[id];
 }
@@ -360,7 +374,7 @@ function opponentTurn() {
   renderGame();
   txt($('#msg'), T.thinking(oppName()));
   setTimeout(() => {
-    const moves = generateMoves(dict, boardOf(game), game.racks[1]);
+    const moves = everydayMoves(generateMoves(dict, boardOf(game), game.racks[1]));
     const m = chooseMove(moves, stage(game.stage).skill);
     if (m) {
       commit(1, m.placements, m);
@@ -388,7 +402,7 @@ function shuffleArray(a) {
 
 function hint() {
   if (game.hints <= 0) return toast(T.noHints);
-  const moves = generateMoves(dict, boardOf(game), game.racks[0]);
+  const moves = everydayMoves(generateMoves(dict, boardOf(game), game.racks[0]));
   const m = chooseMove(moves, 0.9);
   if (!m) return toast(T.noMove);
   game.hints--;
@@ -501,6 +515,15 @@ function hideToast() { $('#toast').classList.remove('show'); }
 
 // ---------- pointer input: tap or drag ----------
 let drag = null;
+const LIFT = 52; // px the dragged tile floats above the finger, so the finger does not hide it
+const cellUnder = e => {
+  const under = document.elementFromPoint(e.clientX, e.clientY - LIFT);
+  return under && under.closest('.cell');
+};
+const markTarget = cell => {
+  document.querySelectorAll('.cell.target').forEach(c => c.classList.remove('target'));
+  if (cell && !cell.querySelector('.tile')) cell.classList.add('target');
+};
 document.addEventListener('pointerdown', e => {
   const t = e.target.closest('.rack-tile, .tile.pending');
   if (!t || !$('#game').contains(t) || busy || game.turn !== 0 || game.over) return;
@@ -517,7 +540,8 @@ document.addEventListener('pointermove', e => {
     drag.src.classList.add('lifted');
   }
   drag.ghost.style.left = e.clientX + 'px';
-  drag.ghost.style.top = e.clientY + 'px';
+  drag.ghost.style.top = e.clientY - LIFT + 'px';
+  markTarget(cellUnder(e));
 });
 const endDrag = e => {
   if (!drag) return;
@@ -526,14 +550,14 @@ const endDrag = e => {
   d.ghost.remove();
   d.src.classList.remove('lifted');
   suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
-  const under = document.elementFromPoint(e.clientX, e.clientY);
-  const cell = under && under.closest('.cell');
+  markTarget(null);
+  const cell = cellUnder(e);
   if (cell) placeTile(d.idx, +cell.dataset.pos);
   else if (d.fromBoard) unplace(d.idx);
   else renderGame();
 };
 document.addEventListener('pointerup', endDrag);
-document.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; if (game) renderGame(); });
+document.addEventListener('pointercancel', () => { if (drag && drag.ghost) drag.ghost.remove(); drag = null; markTarget(null); if (game) renderGame(); });
 
 let suppressClick = false;
 $('#game').addEventListener('click', e => {

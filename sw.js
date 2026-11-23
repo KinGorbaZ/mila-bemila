@@ -1,7 +1,7 @@
 // Offline support: fresh from the network when possible, cached copy otherwise.
-const CACHE = 'mbm-v6';
+const CACHE = 'mbm-v7';
 const SHELL = ['./', 'index.html', 'style.css', 'js/app.js', 'js/engine.js', 'js/content.js',
-  'data/he.dawg', 'data/he.json', 'data/fr.dawg', 'data/fr.json',
+  'data/he.dawg', 'data/he.json', 'data/fr.dawg', 'data/fr.json', 'data/he.common.dawg', 'data/fr.common.dawg',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {

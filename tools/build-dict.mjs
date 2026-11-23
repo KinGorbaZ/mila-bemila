@@ -11,14 +11,32 @@ fs.mkdirSync(out, { recursive: true });
 
 const MIN = 2, MAX = 15;
 
+const finals = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+const normHe = w => w.replace(/[ךםןףץ]/g, ch => finals[ch]);
+const normFr = w => w.toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+
+// Everyday words: dictionary words that people actually use, by how often they occur in
+// film subtitles (FrequencyWords, CC-BY-SA 4.0). The opponent and the hints play only these.
+function commonWords(file, norm, words, minCount) {
+  const dictSet = new Set(words);
+  const count = new Map();
+  for (const line of fs.readFileSync(path.join(raw, file), 'utf8').split(/\r?\n/)) {
+    const sp = line.lastIndexOf(' ');
+    if (sp < 0) continue;
+    const w = norm(line.slice(0, sp));
+    if (dictSet.has(w)) count.set(w, (count.get(w) || 0) + +line.slice(sp + 1));
+  }
+  return [...count].filter(([, n]) => n >= minCount).map(([w]) => w);
+}
+
 function hebrewWords() {
-  const finals = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
   const lines = fs.readFileSync(path.join(raw, 'he_IL.dic'), 'utf8').split(/\r?\n/);
   const set = new Set();
   for (const line of lines) {
     const i = line.indexOf('/');
     if (i < 0) continue; // unflagged entries are prefix particles, not words
-    let w = line.slice(0, i).replace(/[ךםןףץ]/g, ch => finals[ch]);
+    const w = normHe(line.slice(0, i));
     if (w.length < MIN || w.length > MAX) continue;
     if (!/^[א-ת]+$/.test(w)) continue;
     set.add(w);
@@ -30,8 +48,7 @@ function frenchWords() {
   const list = JSON.parse(fs.readFileSync(path.join(raw, 'package', 'index.json'), 'utf8'));
   const set = new Set();
   for (let w of list) {
-    w = w.toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
-      .normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+    w = normFr(w);
     if (w.length < MIN || w.length > MAX) continue;
     if (!/^[A-Z]+$/.test(w)) continue;
     set.add(w);
@@ -122,11 +139,16 @@ function tileSet(words, alphabet, tiles = 98) {
 }
 
 const langs = {
-  he: { alphabet: 'אבגדהוזחטיכלמנסעפצקרשת', words: hebrewWords() },
-  fr: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', words: frenchWords() },
+  he: { alphabet: 'אבגדהוזחטיכלמנסעפצקרשת', words: hebrewWords(), freq: 'he_full.txt', norm: normHe },
+  fr: { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', words: frenchWords(), freq: 'fr_full.txt', norm: normFr },
 };
 
-for (const [id, { alphabet, words }] of Object.entries(langs)) {
+const MIN_COUNT = +(process.env.MIN_COUNT || 8);
+for (const [id, { alphabet, words, freq, norm }] of Object.entries(langs)) {
+  const common = commonWords(freq, norm, words, MIN_COUNT);
+  const cd = buildDawg(common, alphabet);
+  fs.writeFileSync(path.join(out, `${id}.common.dawg`), Buffer.from(cd.buffer));
+  console.log(id, 'common words', common.length, 'bytes', cd.byteLength, 'sample', common.slice(-8).join(' '));
   const dawg = buildDawg(words, alphabet);
   fs.writeFileSync(path.join(out, `${id}.dawg`), Buffer.from(dawg.buffer));
   const meta = { alphabet, blanks: 2, words: words.length, ...tileSet(words, alphabet) };

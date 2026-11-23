@@ -10,3 +10,4 @@
 
 - עברית: פרויקט [Hspell](http://hspell.ivrix.org.il/) (Nadav Har'El, Dan Kenigsberg), רישיון AGPL-3.0, דרך קובץ `he_IL.dic` של LibreOffice.
 - צרפתית: [an-array-of-french-words](https://github.com/words/an-array-of-french-words), רישיון MIT.
+- שכיחות מילים (לרשימת המילים היומיומיות שהיריב משחק): [FrequencyWords](https://github.com/hermitdave/FrequencyWords), רישיון CC-BY-SA 4.0.
