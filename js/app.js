@@ -1,5 +1,7 @@
-import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js';
-import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js';
+import { Dict, N, CENTER, RACK, BONUS, emptyBoard, evaluate, applyMove, generateMoves, chooseMove, makeBag, rackValue } from './engine.js?v=4';
+import { STAGES, PER_TIER, stage, starsFor, TEXT, pretty } from './content.js?v=4';
+
+const VERSION = 4;
 
 const $ = sel => document.querySelector(sel);
 const el = (tag, cls, text) => {
@@ -62,8 +64,8 @@ const savedGame = () => store.get('mbm.game.' + lang, null);
 async function loadDict(id) {
   if (!dicts[id]) {
     const [buf, meta] = await Promise.all([
-      fetch(`data/${id}.dawg`).then(r => r.arrayBuffer()),
-      fetch(`data/${id}.json`).then(r => r.json()),
+      fetch(`data/${id}.dawg?v=${VERSION}`).then(r => r.arrayBuffer()),
+      fetch(`data/${id}.json?v=${VERSION}`).then(r => r.json()),
     ]);
     dicts[id] = new Dict(buf, meta);
   }
@@ -121,7 +123,7 @@ function renderWelcome() {
     renderHome();
   };
   form.append(label, input, go);
-  home.append(form, installRow());
+  home.append(form, installRow(), el('p', 'credits', 'v' + VERSION));
   window.scrollTo(0, 0);
 }
 
@@ -162,7 +164,7 @@ function renderHome() {
     sec.append(grid);
     home.append(sec);
   }
-  home.append(el('p', 'credits', T.credits));
+  home.append(el('p', 'credits', T.credits + ' v' + VERSION));
   const cur = home.querySelector('.stage.current');
   if (cur && stars.some(Boolean)) cur.scrollIntoView({ block: 'center' }); else window.scrollTo(0, 0);
 }
